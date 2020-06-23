@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Grocery Shopping</title>
+    <script type="text/javascript" src="/webjars/jquery/jquery.min.js"></script>
+    <script type="text/javascript" src="/webjars/js-cookie/js.cookie.js"></script>
+    <script type="text/javascript">
+        $.ajaxSetup({
+                beforeSend : function(xhr, settings) {
+                    if (settings.type == 'POST' || settings.type == 'PUT'
+                        || settings.type == 'DELETE') {
+                        if (!(/^http:.*/.test(settings.url) || /^https:.*/
+                            .test(settings.url))) {
+                            // Only send the token to relative URLs i.e. locally.
+                            xhr.setRequestHeader("X-XSRF-TOKEN",
+                                Cookies.get('XSRF-TOKEN'));
+                        }
+                    }
+                }
+            });
+        $.get("/user", function(data) {
+            $("#user").html(data.userAuthentication.details.name);
+            $("#userSub").html(data.userAuthentication.details.sub);
+            $("#userEmail").html(data.userAuthentication.details.email);
+            $("#provider").html(data.userAuthentication.details.identities[0].provider);
+            $(".unauthenticated").hide()
+            $(".authenticated").show()
+        }).fail(function() {
+            $(".unauthenticated").show()
+            $(".authenticated").hide()
+        });
+ 
+        <!-- In this case, we will call GET /userInfo, and this will give us back a string with userinfo details from Principal user -->
+        $.get("/userInfo", function(data) {
+            $("#userInfoString").html(data);
+            $(".unauthenticated").hide()
+            $(".authenticated").show()
+        }).fail(function() {
+            $(".unauthenticated").show()
+            $(".authenticated").hide()
+        });
+        
+        $.get("/userToken", function(data) {
+            $("#userToken").html(data);
+            $(".unauthenticated").hide()
+            $(".authenticated").show()
+        }).fail(function() {
+            $(".unauthenticated").show()
+            $(".authenticated").hide()
+        });
+ 
+        var logout = function() {
+            $.post("/logout", function() {
+                $("#user").html('');
+                $(".unauthenticated").show();
+                $(".authenticated").hide();
+            })
+            return true;
+        }
+    </script>
+    <style>
+   table tr:not(:first-child){
+                cursor: pointer;transition: all .25s ease-in-out;
+            }
+            table tr:not(:first-child):hover{background-color: #ddd;}
+    </style>
+</head>
+
+<div class="container unauthenticated" style="text-align: center;">
+    <a href="/login">Login</a>
+</div>
+<br><br>
+
+<div class="container authenticated" style="text-align: center;" >
+    <strong>Welcome to Online Grocery Shopping !!!</strong>
+    <br><br><br>
+     <p  style="float: left;"> Logged in with : <span id="userEmail"></span> </p>
+    <br><br>
+    <input type="button"  style="float: right;" id="logout" value="Logout" onclick="logout();" />
+    <br><br>
+</div>
+
+<div class="container authenticated" style="text-align: center;" >
+    <strong> Hi <span id="user"></span> !!!</strong>
+    <br><br>
+    <strong>Select the item from the below available list and enter the quantity:</strong>
+    <br> <br>
+    <table id="table" border="1" style="border:1px solid black;margin-left:auto;margin-right:auto;">
+	  <tr>
+	    <th>Item No.</th>
+	    <th>Item Name</th>
+	    <th>Price/Kg</th>
+	  </tr>
+	  <tr>
+	    <td>1</td>
+	    <td>Atta</td>
+	    <td>38</td>
+	  </tr>
+	  <tr>
+	    <td>2</td>
+	    <td>Rice</td>
+	    <td>50</td>
+	  </tr>
+	  <tr>
+	    <td>3</td>
+	    <td>Oil</td>
+	    <td>100</td>
+	  </tr>
+	  <tr>
+	    <td>4</td>
+	    <td>Salt</td>
+	    <td>20</td>
+	  </tr>
+	  <tr>
+	    <td>5</td>
+	    <td>Sugar</td>
+	    <td>38</td>
+	  </tr>
+  </table>
+  <br><br>
+      Item Name:<input type="text" name="itemName" id="itemName">        Quantity:<input type="text" name="qty" id="qty"><br><br>
+<input type="button" id="submit" value="Place Order" onclick="placeOrder();" />
+<br><br>
+<label id="orderId"></label>
+    <br><br><br>
+    <p>User Token: </p><span id="userToken"></span>
+    <br><br><br>
+    <p>Transaction Token: </p><span id="txnToken"></span>
+    <br>
+
+<script>
+var itemTable = document.getElementById('table');    
+
+for(var i = 1; i < itemTable.rows.length; i++){
+	itemTable.rows[i].onclick = function(){
+         document.getElementById("itemName").value = this.cells[1].innerHTML;            
+    };
+}
+                                
+function placeOrder(){
+ 	$.ajax({
+ 		async: "false",
+		url : "/transactionToken",
+		success : function(data) {
+			console.log("Transaction Token: " + data);
+			document.getElementById("txnToken").innerHTML = data;
+			console.log("document.getElementById(txnToken).innerHTML: " + document.getElementById("txnToken").innerHTML);
+			if(document.getElementById('itemName').value == null || document.getElementById('itemName').value == '')
+				alert('Please select the item');
+			if(document.getElementById('qty').value == null || document.getElementById('qty').value == '')
+				alert('Please enter the quantity');
+			var itemName = document.getElementById('itemName').value;
+			var quantity = document.getElementById('qty').value;
+			var userToken = document.getElementById('userToken').innerHTML;
+			var txnToken = document.getElementById("txnToken").innerHTML;
+			var url = "http://localhost:8106/orderprocessing/add/"+itemName+"/"+quantity+"/"+userToken+"/"+txnToken;
+			
+			console.log("Url: " + url);
+			var xhttp = new XMLHttpRequest();
+			xhttp.onreadystatechange = function() {
+			    if (this.readyState == 4 && this.status == 200) {
+			        var response = xhttp.responseText;
+			        console.log("ok"+response);
+			        document.getElementById("orderId").innerHTML = response;
+			        document.getElementById('itemName').value='';
+			        document.getElementById('qty').value='';
+			    }
+			};
+			
+			xhttp.open("GET", url, true);
+			xhttp.send();
+					},
+		error : function(data) {
+			console.log("Failed to fetch Transaction token");
+		}
+	}); 
+	
+}
+
+
+</script>
+</div>
+</body>
+</html>

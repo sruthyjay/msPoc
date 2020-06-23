@@ -1,0 +1,12 @@
+server:
+  port: 8105
+
+security:
+  oauth2:
+    client:
+      clientId: 10da2f2e-88f4-405c-a3b8-80f895a097b5
+      clientSecret: N2FjNzdkMTYtNGM3Yi00ZDJiLWIwZTgtZmZlYWUxM2QxNmQw
+      accessTokenUri: https://eu-gb.appid.cloud.ibm.com/oauth/v4/fea86a87-b522-4592-a551-c151ab3de000/token
+      userAuthorizationUri: https://eu-gb.appid.cloud.ibm.com/oauth/v4/fea86a87-b522-4592-a551-c151ab3de000/authorization
+    resource:
+      userInfoUri: https://eu-gb.appid.cloud.ibm.com/oauth/v4/fea86a87-b522-4592-a551-c151ab3de000/userinfo
